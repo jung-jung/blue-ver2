@@ -7,7 +7,7 @@ const RESET_VERSION = "fresh-start-2026-07-19";
 const metricDefs = [
   { key: "weight", label: "체중", unit: "kg", color: "#60a5fa" },
   { key: "muscle", label: "골격근", unit: "kg", color: "#a78bfa" },
-  { key: "fat", label: "체지방", unit: "%", color: "#fbbf24" },
+  { key: "fat", label: "체지방량", unit: "kg", color: "#fbbf24" },
   { key: "water", label: "체수분", unit: "L", color: "#67e8f9" },
   { key: "bmr", label: "기초대사량", unit: "kcal", color: "#6ee7b7" }
 ];
