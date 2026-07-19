@@ -1046,6 +1046,33 @@ h2 {
   font-size: 12px;
 }
 
+.backup-card {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.backup-card .subtle {
+  margin-top: 6px;
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.backup-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.backup-actions .primary-button,
+.backup-actions .secondary-button {
+  min-height: 44px;
+}
+
+.file-input {
+  display: none;
+}
+
 .progress-label strong:last-child {
   color: var(--mint);
 }

@@ -551,6 +551,23 @@ function statsScreen() {
         ${state.habits.map((habit) => habitProgress(habit)).join("")}
       </div>
     </section>
+    ${backupCard()}
+  `;
+}
+
+function backupCard() {
+  return `
+    <section class="card backup-card">
+      <div>
+        <h2>데이터 백업</h2>
+        <p class="subtle">기록을 JSON 파일로 저장하거나 다시 불러올 수 있어요.</p>
+      </div>
+      <div class="backup-actions">
+        <button class="secondary-button" type="button" data-action="export-data">내보내기</button>
+        <button class="primary-button" type="button" data-action="import-data">가져오기</button>
+        <input class="file-input" type="file" accept="application/json,.json" data-import-file />
+      </div>
+    </section>
   `;
 }
 
@@ -837,6 +854,14 @@ function bindEvents() {
       render({ preserveScroll: true, preserveChartScroll: true });
     });
   });
+
+  app.querySelector("[data-action='export-data']")?.addEventListener("click", exportData);
+
+  app.querySelector("[data-action='import-data']")?.addEventListener("click", () => {
+    app.querySelector("[data-import-file]")?.click();
+  });
+
+  app.querySelector("[data-import-file]")?.addEventListener("change", importData);
 }
 
 function handlePin(key) {
@@ -902,6 +927,52 @@ function saveHabitForm(event) {
   editingHabitId = null;
   saveState();
   render();
+}
+
+function exportData() {
+  const payload = {
+    app: "blue-ver2",
+    version: 1,
+    exportedAt: new Date().toISOString(),
+    state
+  };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `blue-ver2-backup-${todayKey}.json`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
+
+function importData(event) {
+  const file = event.currentTarget.files?.[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.addEventListener("load", () => {
+    try {
+      const parsed = JSON.parse(String(reader.result || "{}"));
+      const importedState = parsed.state || parsed;
+      state = normalizeState(importedState);
+      saveState();
+      activeTab = "stats";
+      view = "app";
+      editingHabitId = null;
+      selectedChartPoint = null;
+      render();
+    } catch {
+      alert("백업 파일을 읽지 못했어요. JSON 파일인지 확인해주세요.");
+    }
+  });
+  reader.readAsText(file);
+}
+
+if ("serviceWorker" in navigator && location.protocol !== "file:") {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("./service-worker.js").catch(() => {});
+  });
 }
 
 render();
