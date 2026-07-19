@@ -25,8 +25,10 @@
 body {
   margin: 0;
   min-height: 100vh;
+  min-height: 100dvh;
   background: radial-gradient(circle at top, #162238 0, var(--bg) 42%);
   color: var(--text);
+  overflow: hidden;
 }
 
 button,
@@ -41,10 +43,12 @@ button {
 
 #app {
   min-height: 100vh;
+  min-height: 100dvh;
 }
 
 .stage {
   min-height: 100vh;
+  min-height: 100dvh;
   display: grid;
   place-items: center;
   padding: 0;
@@ -52,8 +56,10 @@ button {
 
 .phone {
   width: min(402px, 100vw);
-  height: min(874px, 100vh);
-  min-height: 760px;
+  height: 100vh;
+  height: 100dvh;
+  max-height: 874px;
+  min-height: 0;
   background: var(--bg);
   overflow: hidden;
   position: relative;
@@ -63,6 +69,11 @@ button {
 @media (min-width: 446px) {
   .stage {
     padding: 22px;
+  }
+
+  .phone {
+    height: min(874px, calc(100vh - 44px));
+    height: min(874px, calc(100dvh - 44px));
   }
 }
 
@@ -75,12 +86,14 @@ button {
 
 .screen {
   height: 100%;
+  min-height: 0;
   display: flex;
   flex-direction: column;
 }
 
 .content {
   flex: 1;
+  min-height: 0;
   overflow: auto;
   padding: 20px;
   scrollbar-width: none;
@@ -306,8 +319,9 @@ h2 {
 }
 
 .bottom-nav {
-  height: 96px;
-  flex: 0 0 96px;
+  height: calc(88px + env(safe-area-inset-bottom));
+  flex: 0 0 calc(88px + env(safe-area-inset-bottom));
+  padding-bottom: env(safe-area-inset-bottom);
   background: var(--panel);
   border-top: 1px solid var(--line);
 }
@@ -1032,6 +1046,7 @@ h2 {
 @media (max-height: 820px) {
   .phone {
     height: 100vh;
+    height: 100dvh;
     min-height: 0;
   }
 

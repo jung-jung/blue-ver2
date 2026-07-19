@@ -1,5 +1,8 @@
 const PASSWORD = "0909";
 const STORAGE_KEY = "blue-ver2-state";
+const SESSION_UNLOCK_KEY = "blue-ver2-session-unlocked";
+const RESET_VERSION_KEY = "blue-ver2-reset-version";
+const RESET_VERSION = "fresh-start-2026-07-19";
 
 const metricDefs = [
   { key: "weight", label: "체중", unit: "kg", color: "#60a5fa" },
@@ -20,7 +23,7 @@ const todayLabel = new Intl.DateTimeFormat("ko-KR", {
 }).format(today);
 
 const app = document.querySelector("#app");
-let view = "pin";
+let view = sessionStorage.getItem(SESSION_UNLOCK_KEY) === "true" ? "app" : "pin";
 let activeTab = "today";
 let pin = "";
 let pinError = "";
@@ -39,6 +42,10 @@ function toDateKey(date) {
 }
 
 function loadState() {
+  if (localStorage.getItem(RESET_VERSION_KEY) !== RESET_VERSION) {
+    localStorage.removeItem(STORAGE_KEY);
+    localStorage.setItem(RESET_VERSION_KEY, RESET_VERSION);
+  }
   const saved = localStorage.getItem(STORAGE_KEY);
   if (saved) {
     try {
@@ -51,97 +58,19 @@ function loadState() {
 }
 
 function normalizeState(source) {
-  const defaultHabits = [
-    { id: "water", name: "물 2L 마시기", color: habitColors[0] },
-    { id: "protein", name: "단백질 챙기기", color: habitColors[1] },
-    { id: "walk", name: "20분 걷기", color: habitColors[2] },
-    { id: "night", name: "야식 안 먹기", color: habitColors[3] }
-  ];
   const base = {
-    unlocked: false,
-    metrics: seedMetrics(),
-    habits: defaultHabits,
-    habitLogs: seedHabitLogs(defaultHabits)
+    metrics: [],
+    habits: [],
+    habitLogs: {}
   };
   const next = { ...base, ...source };
-  next.metrics = Array.isArray(next.metrics) && next.metrics.length ? next.metrics : base.metrics;
-  next.metrics = backfillMetricHistory(next.metrics);
-  next.habits = Array.isArray(next.habits) && next.habits.length ? next.habits : base.habits;
+  next.metrics = Array.isArray(next.metrics) ? next.metrics : base.metrics;
+  next.habits = Array.isArray(next.habits) ? next.habits : base.habits;
   next.habitLogs = next.habitLogs && typeof next.habitLogs === "object" ? next.habitLogs : {};
   for (const habit of next.habits) {
     if (!next.habitLogs[habit.id]) next.habitLogs[habit.id] = {};
   }
   return next;
-}
-
-function backfillMetricHistory(metrics) {
-  const existingDates = new Set(metrics.map((entry) => entry.date));
-  const history = [
-    [59.8, 23.6, 19.7, 32.6, 1290],
-    [59.5, 23.7, 19.4, 32.7, 1294],
-    [59.2, 23.8, 19.2, 32.8, 1301],
-    [59.0, 23.9, 19.0, 32.9, 1307]
-  ].map((v, index) => {
-    const date = new Date(today);
-    date.setDate(today.getDate() - (metrics.length + historyOffset(index)));
-    return {
-      date: toDateKey(date),
-      weight: v[0],
-      muscle: v[1],
-      fat: v[2],
-      water: v[3],
-      bmr: v[4]
-    };
-  }).filter((entry) => !existingDates.has(entry.date));
-  return history.concat(metrics).sort((a, b) => a.date.localeCompare(b.date));
-}
-
-function historyOffset(index) {
-  return 4 - index;
-}
-
-function seedMetrics() {
-  const values = [
-    [58.9, 24.0, 18.9, 33.0, 1310],
-    [58.7, 24.0, 18.8, 33.1, 1314],
-    [58.6, 24.1, 18.8, 33.0, 1315],
-    [58.4, 24.1, 18.6, 33.2, 1320]
-  ];
-  return values.map((v, index) => {
-    const date = new Date(today);
-    date.setDate(today.getDate() - (values.length - 1 - index));
-    return {
-      date: toDateKey(date),
-      weight: v[0],
-      muscle: v[1],
-      fat: v[2],
-      water: v[3],
-      bmr: v[4]
-    };
-  });
-}
-
-function seedHabitLogs(habits) {
-  const logs = {};
-  const patterns = {
-    water: [1, 1, 0, 0, 1, 1, 0],
-    protein: [1, 0, 1, 1, 0, 0, 0],
-    walk: [1, 0, 0, 0, 1, 1, 0],
-    night: [0, 1, 1, 0, 1, 0, 1]
-  };
-  for (const habit of habits) {
-    logs[habit.id] = {};
-    for (let i = 0; i < 35; i += 1) {
-      const date = new Date(today.getFullYear(), today.getMonth(), 1 + i);
-      if (date.getMonth() !== today.getMonth()) continue;
-      logs[habit.id][toDateKey(date)] = Boolean(patterns[habit.id]?.[i % 7]);
-    }
-  }
-  logs.water[todayKey] = true;
-  logs.protein[todayKey] = true;
-  logs.walk[todayKey] = false;
-  logs.night[todayKey] = false;
-  return logs;
 }
 
 function saveState() {
@@ -322,6 +251,7 @@ function appScreen() {
 
 function todayScreen() {
   const metric = lastMetric();
+  const metricDate = metric ? formatShortDate(metric.date) : "기록 없음";
   return `
     <header class="header">
       <h1>오늘</h1>
@@ -330,7 +260,7 @@ function todayScreen() {
     <section class="card">
       <div class="card-head">
         <h2>마지막 기록 분석</h2>
-        <span class="badge neutral">마지막 기록: ${formatShortDate(metric.date)}</span>
+        <span class="badge neutral">마지막 기록: ${metricDate}</span>
       </div>
       ${metricGrid(metric)}
       <p class="trend"><span class="trend-icon">↘</span><span>어제보다 체중 ${weightDiffText()}</span></p>
@@ -342,7 +272,7 @@ function todayScreen() {
         <span class="badge">${todayDoneCount()}/${state.habits.length} 완료</span>
       </div>
       <div class="habit-list">
-        ${state.habits.map((habit) => todayHabitRow(habit)).join("")}
+        ${state.habits.length ? state.habits.map((habit) => todayHabitRow(habit)).join("") : `<p class="empty">습관 페이지에서 오늘 지킬 습관을 먼저 추가해 주세요.</p>`}
       </div>
     </section>
   `;
@@ -512,12 +442,13 @@ function hexToRgba(hex, alpha) {
 function statsScreen() {
   const metric = lastMetric();
   const habitPercent = averageHabitPercent();
+  const weightValue = metric?.weight ? `${metric.weight}kg` : "-";
   return `
     <header class="header">
       <h1>통계</h1>
     </header>
     <section class="stats-grid">
-      <article class="stat-mini"><p>체중 변화</p><strong>${metric.weight}kg</strong><span>${weightDiffShort()}</span></article>
+      <article class="stat-mini"><p>체중 변화</p><strong>${weightValue}</strong><span>${weightDiffShort()}</span></article>
       <article class="stat-mini"><p>습관 달성률</p><strong>${habitPercent}%</strong><span>이번 달</span></article>
       <article class="stat-mini"><p>연속 기록</p><strong>${streakDays()}일</strong><span>오늘 기준</span></article>
     </section>
@@ -534,7 +465,7 @@ function statsScreen() {
     <section class="card">
       <h2>습관별 달성률</h2>
       <div class="progress-list" style="margin-top: 16px">
-        ${state.habits.map((habit) => habitProgress(habit)).join("")}
+        ${state.habits.length ? state.habits.map((habit) => habitProgress(habit)).join("") : `<p class="empty">아직 등록된 습관이 없습니다.</p>`}
       </div>
     </section>
     ${backupCard()}
@@ -647,6 +578,7 @@ function metricChartScrollable(key) {
   const selected = selectedChartPoint && selectedChartPoint.metric === key
     ? points.find((point) => point.entry.date === selectedChartPoint.date)
     : null;
+  const tooltipLeft = selected ? Math.min(Math.max(selected.x, 44), chartWidth + 16 - 44) : 0;
 
   return `
     <div>
@@ -678,7 +610,7 @@ function metricChartScrollable(key) {
               `;
             }).join("")}
             ${selected ? `
-              <div class="chart-tooltip" style="left: ${selected.x}px; top: ${Math.max(4, selected.y - 42)}px">
+              <div class="chart-tooltip" style="left: ${tooltipLeft}px; top: ${Math.max(4, selected.y - 42)}px">
                 <strong>${selected.value}${def.unit}</strong>
                 <span>${selected.entry.date === todayKey ? "오늘" : formatShortDate(selected.entry.date)}</span>
               </div>
@@ -864,6 +796,7 @@ function handlePin(key) {
     if (pin === PASSWORD) {
       pin = "";
       pinError = "";
+      sessionStorage.setItem(SESSION_UNLOCK_KEY, "true");
       view = "app";
       activeTab = "today";
     } else {
