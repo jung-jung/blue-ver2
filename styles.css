@@ -73,75 +73,8 @@ button {
   }
 }
 
-.status-bar {
-  height: 44px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 24px;
-  font-size: 12px;
-  font-weight: 700;
-}
-
-.status-icons {
-  display: flex;
-  gap: 6px;
-  align-items: center;
-  color: var(--text);
-}
-
-.signal {
-  display: inline-flex;
-  align-items: end;
-  gap: 2px;
-  height: 18px;
-}
-
-.signal span {
-  width: 3px;
-  border-radius: 2px;
-  background: currentColor;
-}
-
-.signal span:nth-child(1) { height: 6px; opacity: 0.65; }
-.signal span:nth-child(2) { height: 9px; opacity: 0.78; }
-.signal span:nth-child(3) { height: 12px; opacity: 0.9; }
-.signal span:nth-child(4) { height: 15px; }
-
-.wifi {
-  font-size: 15px;
-  line-height: 1;
-}
-
-.battery {
-  width: 28px;
-  height: 14px;
-  border: 1.5px solid currentColor;
-  border-radius: 4px;
-  position: relative;
-}
-
-.battery::before {
-  content: "";
-  position: absolute;
-  inset: 2px;
-  border-radius: 2px;
-  background: currentColor;
-}
-
-.battery::after {
-  content: "";
-  position: absolute;
-  right: -4px;
-  top: 4px;
-  width: 2px;
-  height: 5px;
-  border-radius: 0 2px 2px 0;
-  background: currentColor;
-}
-
 .screen {
-  height: calc(100% - 44px);
+  height: 100%;
   display: flex;
   flex-direction: column;
 }

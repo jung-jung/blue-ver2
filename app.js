@@ -224,7 +224,6 @@ function render(options = {}) {
   app.innerHTML = `
     <div class="stage">
       <section class="phone ${view === "app" ? "with-nav" : ""}">
-        ${statusBar()}
         ${view === "pin" ? pinScreen() : ""}
         ${view === "pinError" ? pinErrorScreen() : ""}
         ${view !== "pin" && view !== "pinError" ? appScreen() : ""}
@@ -246,19 +245,6 @@ function render(options = {}) {
       if (previousChartScrollLeft === null) scroller.scrollLeft = scroller.scrollWidth;
     });
   }
-}
-
-function statusBar() {
-  return `
-    <div class="status-bar">
-      <span>9:41</span>
-      <span class="status-icons" aria-hidden="true">
-        <span class="signal"><span></span><span></span><span></span><span></span></span>
-        <span class="wifi">⌁</span>
-        <span class="battery"></span>
-      </span>
-    </div>
-  `;
 }
 
 function pinScreen() {
